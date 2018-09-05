@@ -1,0 +1,4 @@
+uint16[] object_ids
+---
+geometry_msgs/PoseStamped[] object_poses
+float64[] confidences
