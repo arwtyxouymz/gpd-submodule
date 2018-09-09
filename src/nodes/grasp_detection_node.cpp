@@ -414,6 +414,7 @@ gpd::GraspSet GraspDetectionNode::convertToGraspSetMsg(const Grasp& hand)
     tf::vectorEigenToMsg(hand.getApproach(), msg.approach);
     msg.pose = convert_to_ros_msg(hand);
     msg.score.data = hand.getScore();
+    msg.grasp = convertToGraspMsg(hand);
     return msg;
 }
 
