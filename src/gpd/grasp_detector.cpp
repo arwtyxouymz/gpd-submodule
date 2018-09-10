@@ -123,29 +123,28 @@ GraspDetector::GraspDetector(ros::NodeHandle &node) {
       node.advertise<sensor_msgs::PointCloud2>("cleaned_point_cloud", 1);
 }
 
-std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera &cloud_cam) {
+std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam) 
+{
   std::vector<Grasp> selected_grasps(0);
-  // std::vector<Grasp> nan_grasps;
-  // Grasp nan_grasp;
 
   // Check if the point cloud is empty.
-  if (cloud_cam.getCloudOriginal()->size() == 0) {
+  if (cloud_cam.getCloudOriginal()->size() == 0)
+  {
     ROS_INFO("Point cloud is empty!");
     return selected_grasps;
-    // return -1;
   }
 
   // 1. Generate grasp candidates.
   std::vector<GraspSet> candidates = generateGraspCandidates(cloud_cam);
-  ROS_INFO_STREAM("Generated " << candidates.size()
-                               << " grasp candidate sets.");
-  if (candidates.size() == 0) {
+  ROS_INFO_STREAM("Generated " << candidates.size() << " grasp candidate sets.");
+  if (candidates.size() == 0)
+  {
     return selected_grasps;
   }
 
-  // 2.1 Prune grasp candidates based on min. and max. robot hand aperture and
-  // fingers below table surface.
-  if (filter_grasps_) {
+  // 2.1 Prune grasp candidates based on min. and max. robot hand aperture and fingers below table surface.
+  if (filter_grasps_)
+  {
     candidates = filterGraspsWorkspace(candidates, workspace_);
   }
   if (candidates.size() == 0) {
@@ -153,7 +152,8 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera &cloud_cam) {
   }
 
   // 2.2 Filter half grasps.
-  if (filter_half_antipodal_) {
+  if (filter_half_antipodal_)
+  {
     candidates = filterHalfAntipodal(candidates);
   }
   if (candidates.size() == 0) {
@@ -165,88 +165,62 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera &cloud_cam) {
   valid_grasps = classifyGraspCandidates(cloud_cam, candidates);
   ROS_INFO_STREAM("Predicted " << valid_grasps.size() << " valid grasps.");
 
-  if (valid_grasps.size() <= 2) {
-    std::cout << "Not enough valid grasps predicted! Using all grasps from "
-                 "previous step.\n";
-    // return valid_grasps
+  if (valid_grasps.size() <= 2)
+  {
+    std::cout << "Not enough valid grasps predicted! Using all grasps from previous step.\n";
     valid_grasps = extractHypotheses(candidates);
   }
-  if (valid_grasps.size() <= 2) {
-    std::cout
-        << "Not enough valid grasps extracted! Using all grasps extracted\n";
+  if (valid_grasps.size() <= 2)
+  {
+    std::cout << "Not enough valid grasps extracted! Using all grasps extracted\n";
     return valid_grasps;
   } else if (valid_grasps.size() == 0) {
     return selected_grasps;
   }
   // 4. Cluster the grasps.
   std::vector<Grasp> clustered_grasps;
-  std::vector<cv::Mat> clustered_images;
-  if (cluster_grasps_) {
-    // clustered_grasps = findClusters(valid_grasps, screened_images);
-    bool remove_inliers = false;
-    std::tie(clustered_grasps, clustered_images) =
-        findClusters(valid_grasps, screened_images, remove_inliers);
 
+  if (cluster_grasps_)
+  {
+    bool remove_inliers = false;
+    clustered_grasps = findClusters(valid_grasps);
     ROS_INFO_STREAM("Found " << clustered_grasps.size() << " clusters.");
-    if (clustered_grasps.size() <= 1) {
-      std::cout << "Not enough clusters found! Using all grasps from previous "
-                   "step.\n";
+    if (clustered_grasps.size() <= 1)
+    {
+      std::cout << "Not enough clusters found! Using all grasps from previous step.\n";
       clustered_grasps = valid_grasps;
-      clustered_images = screened_images;
     }
-  } else {
-    clustered_grasps = valid_grasps;
-    clustered_images = screened_images;
   }
-  std::vector<std::pair<decltype(clustered_grasps)::reference,
-                        decltype(clustered_images)::reference>>
-      tmpvector;
-  for (int i = 0; i < clustered_grasps.size(); i++) {
-    auto &a = clustered_grasps.at(i);
-    if (std::isnan(a.getScore())) {
-      continue;
-    }
-    auto &b = clustered_images.at(i);
-    tmpvector.push_back(std::make_pair(std::ref(a), std::ref(b)));
+  else
+  {
+    clustered_grasps = valid_grasps;
   }
 
   // 5. Select highest-scoring grasps.
-  std::vector<cv::Mat> selected_images;
-  std::cout << "Sorting the grasps based on their score ... \n";
-  std::sort(tmpvector.begin(), tmpvector.end(),
-            [](decltype(tmpvector)::const_reference p1,
-               decltype(tmpvector)::const_reference p2) {
-              return p1.first.getScore() > p2.first.getScore();
-            });
-  // push back the top-k highest grasps 
-  for (int i = 0; i < std::min((int)tmpvector.size(), num_selected_); i++) {
-    selected_grasps.push_back(tmpvector[i].first);
-    selected_images.push_back(tmpvector[i].second);
+  if (clustered_grasps.size() > num_selected_)
+  {
+    std::cout << "Partial Sorting the grasps based on their score ... \n";
+    std::partial_sort(clustered_grasps.begin(), clustered_grasps.begin() + num_selected_, clustered_grasps.end(),
+      isScoreGreater);
+    selected_grasps.assign(clustered_grasps.begin(), clustered_grasps.begin() + num_selected_);
+  }
+  else
+  {
+    std::cout << "Sorting the grasps based on their score ... \n";
+    std::sort(clustered_grasps.begin(), clustered_grasps.end(), isScoreGreater);
+    selected_grasps = clustered_grasps;
   }
 
-  ROS_INFO_STREAM("Selected the " << selected_grasps.size()
-                                  << " highest scoring grasps.");
-
-  if (is_benchmark) {
-    ofstream fout;
-    fout.open("/catkin_ws/src/gpd/annotation/tmp.bin",
-              ios::out | ios::binary | ios::trunc);
-    cv::Mat output;
-    output = selected_images[0];
-    for (int i = 0; i < 60; i++) {
-      for (int j = 0; j < 60; j++) {
-        for (int k = 0; k < 15; k++) {
-          fout.write(
-              (char *)&output.data[i * output.step + j * output.elemSize() + k],
-              sizeof(uint8_t));
-        }
-      }
-    }
-    fout.close();
+  for (int i = 0; i < selected_grasps.size(); i++)
+  {
+    std::cout << "Grasp " << i << ": " << selected_grasps[i].getScore() << "\n";
   }
+
+  ROS_INFO_STREAM("Selected the " << selected_grasps.size() << " highest scoring grasps.");
 
   return selected_grasps;
 }
+
 
 std::vector<GraspSet>
 GraspDetector::generateGraspCandidates(const CloudCamera &cloud_cam) {
