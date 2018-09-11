@@ -57,14 +57,13 @@
 #include <gpg/candidates_generator.h>
 #include <gpg/grasp.h>
 #include <gpg/grasp_set.h>
-//#include <gpg/plot.h>
+#include <gpg/plot.h>
 
 // Custom
 #include "../gpd/caffe_classifier.h"
 #include "../gpd/clustering.h"
 #include "../gpd/learning.h"
 
-#include <tuple>
 
 /** GraspDetector class
  *
@@ -94,13 +93,11 @@ public:
     delete clustering_;
     delete classifier_;
   }
-  std::vector<Grasp> valid_grasps; 
+  
   /**
    * \brief Preprocess the point cloud.
    * \param cloud_cam the point cloud
    */
-ros::Publisher cleaned_pointcloud_pub;
-
   void preprocessPointCloud(CloudCamera& cloud_cam);
 
   /**
@@ -163,10 +160,8 @@ ros::Publisher cleaned_pointcloud_pub;
    * \param grasps the grasps for which to search clusters
    * \return the grasps that are in clusters
    */
-  //std::vector<Grasp> findClusters(const std::vector<Grasp>& grasps, std::vector<cv::Mat>& screened_images);
-//  std::tuple<std::vector<Grasp>, std::vector<cv::Mat>> findClusters(const std::vector<Grasp>& grasps, std::vector<cv::Mat>& screened_images);
-std::vector<Grasp> findClusters(const std::vector<Grasp>& grasps);
-std::tuple<std::vector<Grasp>, std::vector<cv::Mat>> findClusters(const std::vector<Grasp>& grasps, std::vector<cv::Mat>& screened_images, bool remove_inliers);
+  std::vector<Grasp> findClusters(const std::vector<Grasp>& grasps);
+
   /**
    * \brief Compare if the score of a grasp is larger than the score of another grasp.
    * \param hypothesis1 a grasp
@@ -204,7 +199,7 @@ private:
   bool plot_valid_grasps_; ///< if positive grasp instances are plotted
   bool plot_clusters_; ///< if grasp clusters are plotted
   bool plot_selected_grasps_; ///< if selected grasps are plotted
-  std::vector<cv::Mat> screened_images;
+
   // filtering parameters
   bool filter_grasps_; ///< if grasps are filtered based on the robot's workspace and the robot hand width
   bool filter_half_antipodal_; ///< if grasps are filtered based on being half-antipodal
@@ -213,7 +208,7 @@ private:
   double min_aperture_; ///< the minimum opening width of the robot hand
   double max_aperture_; ///< the maximum opening width of the robot hand
   std::vector<double> workspace_; ///< the workspace of the robot
-  bool is_benchmark;
+
   // selection parameters
   int num_selected_; ///< the number of selected grasps
 };
