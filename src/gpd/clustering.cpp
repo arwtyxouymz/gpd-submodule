@@ -166,6 +166,7 @@ std::vector<Grasp> Clustering::findClusters(const std::vector<Grasp>& hand_list,
         }
       }
     }
+    if (num_inliers == 0) continue;
 
     if (num_inliers >= min_inliers_)
     {
@@ -176,9 +177,9 @@ std::vector<Grasp> Clustering::findClusters(const std::vector<Grasp>& hand_list,
       double median = scores[scores.size()/2];
       double conf_lb = mean - 2.576*standard_deviation/sqrt((double)num_inliers);
       double conf_ub = mean + 2.576*standard_deviation/sqrt((double)num_inliers);
-//      std::cout << "grasp " << i << ", num_inliers: " << num_inliers << ", ||pos_delta||: " << position_delta.norm()
-//        << ", mean: " << mean << ", std: " << standard_deviation << ", median: " << median << ", conf: " << conf_lb
-//        << ", " << conf_ub << "\n";
+     // std::cout << "grasp " << i << ", num_inliers: " << num_inliers << ", ||pos_delta||: " << position_delta.norm()
+     //   << ", mean: " << mean << ", std: " << standard_deviation << ", median: " << median << ", conf: " << conf_lb
+     //   << ", " << conf_ub << "\n";
       Grasp hand = hand_list[i];
       hand.setGraspSurface(hand.getGraspSurface() + position_delta);
       hand.setGraspBottom(hand.getGraspBottom() + position_delta);
@@ -192,4 +193,3 @@ std::vector<Grasp> Clustering::findClusters(const std::vector<Grasp>& hand_list,
 
   return hands_out;
 }
-

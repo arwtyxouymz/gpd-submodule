@@ -196,6 +196,7 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     clustered_grasps = valid_grasps;
   }
 
+  // OK
   // 5. Select highest-scoring grasps.
   if (clustered_grasps.size() > num_selected_)
   {
