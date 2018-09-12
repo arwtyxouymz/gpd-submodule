@@ -234,52 +234,84 @@ void GraspDetector::preprocessPointCloud(CloudCamera &cloud_cam) {
 
 std::vector<Grasp>
 GraspDetector::classifyGraspCandidates(const CloudCamera &cloud_cam,
-                                       std::vector<GraspSet> &candidates) {
+              std::vector<GraspSet>& candidates)
+{
   // Create a grasp image for each grasp candidate.
   double t0 = omp_get_wtime();
   std::cout << "Creating grasp images for classifier input ...\n";
   std::vector<float> scores;
   std::vector<Grasp> grasp_list;
   int num_orientations = candidates[0].getHypotheses().size();
-  // Create the grasp images.
-  std::vector<cv::Mat> image_list =
-      learning_->createImages(cloud_cam, candidates, cleaned_pointcloud_pub);
 
-  std::cout << " Image creation time: " << omp_get_wtime() - t0 << std::endl;
+  // Create images in batches if required (less memory usage).
+  if (create_image_batches_)
+  {
+    int batch_size = classifier_->getBatchSize();
+    int num_iterations = (int) ceil(candidates.size() * num_orientations / (double) batch_size);
+    int step_size = (int) floor(batch_size / (double) num_orientations);
+    std::cout << " num_iterations: " << num_iterations << ", step_size: " << step_size << "\n";
 
-  // std::vector<Grasp> valid_grasps;
-  std::vector<cv::Mat> valid_images;
-  extractGraspsAndImages(candidates, image_list, valid_grasps, valid_images);
-  cout << "length of valid images" << valid_images.size() << std::endl;
-  if (valid_images.size() == 0) {
-    // Exception
-    cout << "returning null grasp list" << endl;
-    return grasp_list;
+    // Process the grasp candidates in batches.
+    for (int i = 0; i < num_iterations; i++)
+    {
+      std::cout << i << "\n";
+      std::vector<GraspSet>::iterator start = candidates.begin() + i * step_size;
+      std::vector<GraspSet>::iterator stop;
+      if (i < num_iterations - 1)
+      {
+        stop = candidates.begin() + i * step_size + step_size;
+      }
+      else
+      {
+        stop = candidates.end();
+      }
+
+      std::vector<GraspSet> hand_set_sublist(start, stop);
+      std::vector<cv::Mat> image_list = learning_->createImages(cloud_cam, hand_set_sublist);
+
+      std::vector<Grasp> valid_grasps;
+      std::vector<cv::Mat> valid_images;
+      extractGraspsAndImages(candidates, image_list, valid_grasps, valid_images);
+
+      std::vector<float> scores_sublist = classifier_->classifyImages(valid_images);
+      scores.insert(scores.end(), scores_sublist.begin(), scores_sublist.end());
+      grasp_list.insert(grasp_list.end(), valid_grasps.begin(), valid_grasps.end());
+    }
   }
-  // Classify the grasp images.
-  double t0_prediction = omp_get_wtime();
-  scores = classifier_->classifyImages(valid_images);
-  grasp_list.assign(valid_grasps.begin(), valid_grasps.end());
-  std::cout << " Prediction time: " << omp_get_wtime() - t0 << std::endl;
-  //}
+  else
+  {
+    // Create the grasp images.
+    std::vector<cv::Mat> image_list = learning_->createImages(cloud_cam, candidates);
+    std::cout << " Image creation time: " << omp_get_wtime() - t0 << std::endl;
+
+    std::vector<Grasp> valid_grasps;
+    std::vector<cv::Mat> valid_images;
+    extractGraspsAndImages(candidates, image_list, valid_grasps, valid_images);
+
+    // Classify the grasp images.
+    double t0_prediction = omp_get_wtime();
+    scores = classifier_->classifyImages(valid_images);
+    grasp_list.assign(valid_grasps.begin(), valid_grasps.end());
+    std::cout << " Prediction time: " << omp_get_wtime() - t0 << std::endl;
+  }
 
   // Select grasps with a score of at least <min_score_diff_>.
   std::vector<Grasp> valid_grasps;
 
-  for (int i = 0; i < grasp_list.size(); i++) {
-    if (scores[i] >= min_score_diff_) {
-      // std::cout << "grasp #" << i << ", score: " << scores[i] << "\n";
+  for (int i = 0; i < grasp_list.size(); i++)
+  {
+    if (scores[i] >= min_score_diff_)
+    {
+      std::cout << "grasp #" << i << ", score: " << scores[i] << "\n";
       valid_grasps.push_back(grasp_list[i]);
-      screened_images.push_back(valid_images[i]);
       valid_grasps[valid_grasps.size() - 1].setScore(scores[i]);
       valid_grasps[valid_grasps.size() - 1].setFullAntipodal(true);
     }
   }
 
-  std::cout << "Found " << valid_grasps.size()
-            << " grasps with a score >= " << min_score_diff_ << "\n";
-  std::cout << "Total classification time: " << omp_get_wtime() - t0
-            << std::endl;
+  std::cout << "Found " << valid_grasps.size() << " grasps with a score >= " << min_score_diff_ << "\n";
+  std::cout << "Total classification time: " << omp_get_wtime() - t0 << std::endl;
+
   return valid_grasps;
 }
 

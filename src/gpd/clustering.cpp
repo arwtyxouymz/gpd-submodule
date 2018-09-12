@@ -166,9 +166,8 @@ std::vector<Grasp> Clustering::findClusters(const std::vector<Grasp>& hand_list,
         }
       }
     }
-    if (num_inliers == 0) continue;
 
-    if (num_inliers >= min_inliers_)
+    if (num_inliers != 0 && num_inliers >= min_inliers_)
     {
       position_delta = position_delta / (double) num_inliers - hand_list[i].getGraspBottom();
       mean = std::max(mean / (double) num_inliers, (double) num_inliers);
