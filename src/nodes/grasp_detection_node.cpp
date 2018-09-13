@@ -189,7 +189,7 @@ std::vector<Grasp> GraspDetectionNode::detectGraspPosesInTopic()
   }
 
   // Publish the selected grasps.
-  gpd::GraspConfigList selected_grasps_msg = createGraspListMsg(grasps);
+  // gpd::GraspConfigList selected_grasps_msg = createGraspListMsg(grasps);
   gpd::GraspSetList custom_grasps_msg = createGraspSetListMsg(grasps);
   // grasps_pub_.publish(selected_grasps_msg);
   grasps_pub_.publish(custom_grasps_msg);

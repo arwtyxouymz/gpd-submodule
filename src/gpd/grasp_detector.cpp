@@ -160,9 +160,8 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     return selected_grasps;
   }
 
-  // 3. Classify each grasp candidate. (Note: switch from a list of hypothesis
-  // sets to a list of grasp hypotheses)
-  valid_grasps = classifyGraspCandidates(cloud_cam, candidates);
+  // 3. Classify each grasp candidate. (Note: switch from a list of hypothesis sets to a list of grasp hypotheses)
+  std::vector<Grasp> valid_grasps = classifyGraspCandidates(cloud_cam, candidates);
   ROS_INFO_STREAM("Predicted " << valid_grasps.size() << " valid grasps.");
 
   if (valid_grasps.size() <= 2)
@@ -170,22 +169,15 @@ std::vector<Grasp> GraspDetector::detectGrasps(const CloudCamera& cloud_cam)
     std::cout << "Not enough valid grasps predicted! Using all grasps from previous step.\n";
     valid_grasps = extractHypotheses(candidates);
   }
-  if (valid_grasps.size() <= 2)
-  {
-    std::cout << "Not enough valid grasps extracted! Using all grasps extracted\n";
-    return valid_grasps;
-  } else if (valid_grasps.size() == 0) {
-    return selected_grasps;
-  }
+
   // 4. Cluster the grasps.
   std::vector<Grasp> clustered_grasps;
 
   if (cluster_grasps_)
   {
-    bool remove_inliers = false;
     clustered_grasps = findClusters(valid_grasps);
     ROS_INFO_STREAM("Found " << clustered_grasps.size() << " clusters.");
-    if (clustered_grasps.size() <= 1)
+    if (clustered_grasps.size() <= 3)
     {
       std::cout << "Not enough clusters found! Using all grasps from previous step.\n";
       clustered_grasps = valid_grasps;
@@ -232,9 +224,9 @@ void GraspDetector::preprocessPointCloud(CloudCamera &cloud_cam) {
   candidates_generator_->preprocessPointCloud(cloud_cam);
 }
 
-std::vector<Grasp>
-GraspDetector::classifyGraspCandidates(const CloudCamera &cloud_cam,
-              std::vector<GraspSet>& candidates)
+
+std::vector<Grasp> GraspDetector::classifyGraspCandidates(const CloudCamera& cloud_cam,
+  std::vector<GraspSet>& candidates)
 {
   // Create a grasp image for each grasp candidate.
   double t0 = omp_get_wtime();
