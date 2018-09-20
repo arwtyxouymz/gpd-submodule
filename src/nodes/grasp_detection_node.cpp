@@ -476,7 +476,7 @@ visualization_msgs::Marker GraspDetectionNode::createFingerMarker(const Eigen::V
     marker.pose.position.x = center(0);
     marker.pose.position.y = center(1);
     marker.pose.position.z = center(2);
-    marker.lifetime = ros::Duration(10);
+    marker.lifetime = ros::Duration(30);
 
     // use orientation of hand frame
     Eigen::Quaterniond quat(frame);
@@ -515,7 +515,7 @@ visualization_msgs::Marker GraspDetectionNode::createHandBaseMarker(const Eigen:
     marker.pose.position.x = center(0);
     marker.pose.position.y = center(1);
     marker.pose.position.z = center(2);
-    marker.lifetime = ros::Duration(10);
+    marker.lifetime = ros::Duration(30);
 
     // use orientation of hand frame
     Eigen::Quaterniond quat(frame);
