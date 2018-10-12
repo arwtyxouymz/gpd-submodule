@@ -68,8 +68,8 @@ GraspDetectionNode::GraspDetectionNode(ros::NodeHandle& node) : has_cloud_(false
   }
 
   // uses ROS topics to publish grasp candidates, antipodal grasps, and grasps after clustering
-  // grasps_pub_ = nh_.advertise<gpd::GraspConfigList>("clustered_grasps", 10);
   grasps_pub_ = nh_.advertise<gpd::GraspSetList>("clustered_grasps", 10);
+  index_sub_ = nh_.subscribe("/marker_index", 1, &GraspDetectionNode::marker_index_callback);
 
   // Advertise the SetParameters service
   srv_set_params_ = nh_.advertiseService("/gpd/set_params", &GraspDetectionNode::set_params_callback, this);
@@ -77,6 +77,15 @@ GraspDetectionNode::GraspDetectionNode(ros::NodeHandle& node) : has_cloud_(false
   nh_.getParam("workspace", workspace_);
 }
 
+void GraspDetectionNode::marker_index_callback(const std_msgs::Int8& msg)
+{
+    if (!use_rviz_) return;
+    std::vector<Grasp> grasp;
+    grasp.push_back(grasp_for_markers[static_cast<int>(msg.data)]);
+    const HandSearch::Parameters& params = grasp_detector_->getHandSearchParameters();
+    grasps_rviz_pub_.publish(convertToVisualGraspMsg(grasps, params.hand_outer_diameter_, params.hand_depth_,
+                                                     params.finger_width_, params.hand_height_, frame_));
+}
 
 void GraspDetectionNode::run()
 {
@@ -89,6 +98,7 @@ void GraspDetectionNode::run()
     {
       // detect grasps in point cloud
       std::vector<Grasp> grasps = detectGraspPosesInTopic();
+      grasp_for_markers = grasps;
 
       // visualize grasps in rviz
       if (use_rviz_)

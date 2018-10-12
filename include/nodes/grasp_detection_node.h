@@ -204,6 +204,7 @@ private:
   ros::Publisher grasps_pub_; ///< ROS publisher for grasp list messages
   ros::Publisher grasps_rviz_pub_; ///< ROS publisher for grasps in rviz (visualization)
   ros::ServiceServer srv_set_params_; ///< ROS service server for setting params
+  ros::Subscriber index_sub_; // Marker Index Subscriber
 
   bool use_importance_sampling_; ///< if importance sampling is used
   bool filter_grasps_; ///< if grasps are filtered on workspace and gripper aperture
@@ -222,6 +223,8 @@ private:
   static const int POINT_CLOUD_2; ///< sensor_msgs/PointCloud2
   static const int CLOUD_INDEXED; ///< gpd/CloudIndexed
   static const int CLOUD_SAMPLES; ///< gpd/CloudSamples
+
+  std::vector<Grasp> grasp_for_markers;
 };
 
 #endif /* GRASP_DETECTION_NODE_H_ */
