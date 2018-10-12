@@ -49,7 +49,7 @@
     
     <!-- Filtering of grasp candidates -->
     <param name="filter_grasps" value="true" /> <!-- on workspace and robot hand aperture -->
-    <rosparam param="workspace_grasps"> [0.40, 1.10, -0.40, 0.40, 0.22, 0.50] </rosparam>
+    <rosparam param="workspace_grasps"> [0.40, 1.10, -0.40, 0.40, 0.241, 0.50] </rosparam>
     <param name="filter_half_antipodal" value="true"/> <!-- on half antipodal -->
     
     <!-- Grasp image creation -->

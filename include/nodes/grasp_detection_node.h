@@ -45,6 +45,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_msgs/Int8.h>
 
 // PCL
 #include <pcl/common/common.h>
@@ -164,6 +165,7 @@ private:
    * \param msg the incoming ROS message
   */
   void samples_callback(const gpd::SamplesMsg& msg);
+  void marker_index_callback(const std_msgs::Int8& msg);
 
   /**
    * \brief Create a ROS message that contains a list of grasp poses from a list of handles.
@@ -177,13 +179,13 @@ private:
   gpd::GraspSet convertToGraspSetMsg(const Grasp& hand);
 
   visualization_msgs::MarkerArray convertToVisualGraspMsg(const std::vector<Grasp>& hands, double outer_diameter,
-    double hand_depth, double finger_width, double hand_height, const std::string& frame_id);
+    double hand_depth, double finger_width, double hand_height, const std::string& frame_id, float a=0.3, float r=0, float g=0.0, float b=0.5);
 
   visualization_msgs::Marker createFingerMarker(const Eigen::Vector3d& center, const Eigen::Matrix3d& frame,
-    double length, double width, double height, int id, const std::string& frame_id);
+    double length, double width, double height, int id, const std::string& frame_id, float a=0.3, float r=0, float g=0.0, float b=0.5);
 
   visualization_msgs::Marker createHandBaseMarker(const Eigen::Vector3d& start, const Eigen::Vector3d& end,
-      const Eigen::Matrix3d& frame, double length, double height, int id, const std::string& frame_id);
+      const Eigen::Matrix3d& frame, double length, double height, int id, const std::string& frame_id, float a=0.3, float r=0, float g=0.0, float b=0.5);
 
   Eigen::Matrix3Xd fillMatrixFromFile(const std::string& filename, int num_normals);
 
