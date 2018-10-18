@@ -574,7 +574,7 @@ geometry_msgs::PoseStamped GraspDetectionNode::convert_to_ros_msg(const Grasp &g
     right_top = right_bottom + hand_depth * grasp.getApproach();
     left_center = left_bottom + 0.5 * (left_top - left_bottom);
     right_center = right_bottom + 0.5 * (right_top - right_bottom);
-    base_center = left_bottom + 0.5 * (right_bottom - left_bottom) - 0.05 * grasp.getApproach();
+    base_center = left_bottom + 0.5 * (right_bottom - left_bottom) - 0.02 * grasp.getApproach();
     Eigen::Quaterniond quat(grasp.getFrame());
 
     geometry_msgs::PoseStamped pre_pose;
